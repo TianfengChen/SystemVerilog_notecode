@@ -127,3 +127,25 @@ r = new();
 r.cal_crc();//call base class function
 
 
+//Blueprint
+//copy a blueprint to generate a new object
+//declaration, initialization, call in different block
+class Generator;
+    mailbox gen2drv;
+    Transaction blueprint;//declaration
+
+    function new(input mailbox gen2drv);
+        this.gen2drv = gen2drv;
+        blueprint = new();//initialization
+    endfunction
+
+    task run;
+        Transaction t;
+        forever begin
+            assert(blueprint.randomize)
+            t = blueprint.copy();//copy
+            gen2drv.put(t);
+        end
+    endtask
+endclass
+
