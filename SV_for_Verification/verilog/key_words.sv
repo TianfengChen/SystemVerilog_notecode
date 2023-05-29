@@ -97,3 +97,5 @@ program automatic test(arb_if.TEST arb);
 endprogram
 
 
+//extern
+//use extern to declare a function in class is defined in outside of class
