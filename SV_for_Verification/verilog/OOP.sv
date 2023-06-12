@@ -190,11 +190,13 @@ endclass
 //but not in main class and its derived class
 virtual class Driver_callback;
     virtual task pre_cb(ref Transaction t, ref bit drop);
+        drop = ($urandom_range(0,99)==0);//drop one cell each 100 cells
     endtask
 
     virtual task post_cb(ref Transaction t);
     endtask
 endclass
+
 //use a queue to store call back class object
 class Driver;
     Driver_callback cb[$];
@@ -203,10 +205,12 @@ class Driver;
         bit drop;
         forever begin
             t = new();
-            foreach(cb[i])cb[i].pre_cb(t,drop);
-            if(!drop)
-                put(t);
-            foreach(cb[i])cb[i].post_cb(t,drop);
+            foreach(cb[i])
+                cb[i].pre_cb(t,drop);
+                if(!drop) continue;
+                transmit(t);
+            foreach(cb[i])
+                cb[i].post_cb(t);
         end
     endtask
 endclass
@@ -215,21 +219,25 @@ endclass
 //scoreboard: store transaction, output expected value, store actual value, comparation
 //use a queue to store transaction
 class Scoreboard;
-    Transaction exp[$];
+    Transaction scb[$];
     function store_exp(input Transaction t);
-        exp.push_back(t);
+        scb.push_back(t);
     endfunction
 
     function compare(input Transaction t);
-
-        foreach(exp[i])begin
-            //find the same transaction
-        end
+        int q[$];
+        q = scb.find_index(x)with(x.src=tr.src);
+        case(q.size())
+            0:$display("no match found");
+            1:scb.delete(q[0]);
+            default:
+                $display("Error, multiple match found");
+        endcase
     endfunction
 endclass
 
 //use callback to connect scoreboard and driver
-class Driver_callback_sb;
+class Driver_callback_sb extends Driver_callback;
     Scoreboard sb;
     function new(input Scoreboard sb);
         this.sb = sb;
@@ -243,6 +251,19 @@ class Driver_callback_sb;
         sb.compare(t);
     endtask
 endclass
+
+program automatic test;
+    environment env;
+    Scpreboard sb;
+
+    initial begin
+        env = new();
+        env.gen_cfg();
+        env.build();
+        Driver_callback_sb dcb = new(sb);
+        env.driver.cb.push_back(dcb);//connext scoreboard and driver
+    end
+endprogram
 
 //parameterized classes (class template)
 parameter int SIZE = 100;
@@ -282,4 +303,3 @@ program test;
 endprogram
 
 //use parameterized class and static member to create a database
-//test registry

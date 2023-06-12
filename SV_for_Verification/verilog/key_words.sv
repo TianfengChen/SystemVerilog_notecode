@@ -99,3 +99,9 @@ endprogram
 
 //extern
 //use extern to declare a function in class is defined in outside of class
+
+
+//function
+//display write, display will add /n, write in one line
+//strobe, display only when end of time slot
+//monitor,when variable change
